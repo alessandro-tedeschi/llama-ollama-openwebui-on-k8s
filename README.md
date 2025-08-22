@@ -201,7 +201,7 @@ La chiamata può essere fatta a IP e porta del nodo:
 ```bash
 curl http://<NodeIP>:31434/api/generate -d '{
   "model": "llama3.2:1b",
-  "prompt": "explain briefly why the sky is blue.",
+  "prompt": "Ciao",
   "stream": false
 }'
 ```
@@ -210,7 +210,7 @@ In alternativa, si può usare ClusterIP e porta del servizio.
 ```bash
 curl http://<ClusterIP>:11434/api/generate -d '{
   "model": "llama3.2:1b",
-  "prompt": "explain briefly why the sky is blue.",
+  "prompt": "Ciao",
   "stream": false
 }'
 ```
@@ -218,12 +218,12 @@ dove il ClusterIP è visualizzabile mediante:
 ```bash
 kubectl get svc -n ollama
 ```
-
----
+Esempio di risposta alla cURL precedente:
+`{"model":"llama3.2:1b","created_at":"2025-08-22T19:10:36.843486191Z","response":"Ciao! Come stai?","done":true,"done_reason":"stop","context":[128006,9125,128007,271,38766,1303,33025,2696,25,6790,220,2366,18,271,128009,128006,882,128007,271,34,23332,128009,128006,78191,128007,271,34,23332,0,15936,357,2192,30],"total_duration":12147366531,"load_duration":7292834395,"prompt_eval_count":27,"prompt_eval_duration":2850983780,"eval_count":8,"eval_duration":2000574667}`
 
 ## 4. Open WebUI
 
-Creazione di **PV** e **PVC** necessari per la persistenza di conversazioni e credenziali. Nel nodo worker deve essere presente la directory /mnt/data/openwebui:
+Creazione di **PersistentVolume** e **PersistentVolumeClaim** necessari per la persistenza di conversazioni e credenziali:
 
 `openwebui/openwebui_pvc.yaml`:
 
@@ -255,13 +255,13 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi                        
+      storage: 5Gi                                              
 ```
 Eseguire il comando:
 ```bash
 kubectl apply -f openwebui_pvc.yaml
 ```
-Creazione di **Deployment** e **Service** (di tipo **LoadBalancer**) per Open WebUI. Come LoadBalancer è stato utilizzato MetalLB.
+Creazione di **Deployment** e **Service** di tipo LoadBalancer per Open WebUI. Come LoadBalancer è stato utilizzato MetalLB.
 
 `openwebui/openwebui_deploy.yaml`:
 
@@ -347,15 +347,14 @@ Ora è possibile accedere al servizio Open WebUI tramite browser da uno dei due 
 ```
 http://<ExternalIP>:<8080>
 ```
-dove l'indirizzo IP esterno può essere visualizzato attraverso:
+dove ExternalIP è l'indirizzo IP esterno del LoadBalancer, visualizzabile attraverso attraverso:
 ```bash
 kubectl get svc -n ollama
 ```
-oppure
-```bash
-kubectl describe svc -n ollama open-webui
-```
-
 ---
 
-## 5. Test dell'interfaccia Open WebUI
+## 5. Test dell'applicazione.
+
+
+
+
