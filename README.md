@@ -1,4 +1,4 @@
-# Deployment di Ollama + Open WebUI su Kubernetes
+# Deployment di Llama,Ollama e Open WebUI su Kubernetes
 ## Descrizione del progetto
 Il progetto consiste nel deployment di **Llama3.2:1b**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
 1. **Llama3.2:1b** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con 1 miliardo di parametri.
@@ -18,46 +18,128 @@ Per quanto riguarda i nodi Kubernetes, una VM ospita il nodo master e l’altra 
 
 ![Figura 1 – Architettura del cluster Kubernetes](img/cluster-architettura.jpg)
 
-## 1. Creazione namespace e PVC
+## 1. Deployment di Ollama
 
-Creazione del namespace `ollama_ns`:
+Creazione del **Namespace** in cui definiremo tutte le risorse relative a questo progetto:
+
+`ollama/ollama_ns.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ollama
+```
+Eseguire il comando
 ```bash
 kubectl apply -f ollama_ns.yaml
 ```
 
-Creazione dei **PV/PVC**:
+Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati , tra cui i modelli stessi.
+
+`ollama/ollama_pvc.yaml`:
+
+```yaml
+#persistent volume
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ollama-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /mnt/data/ollama
+  claimRef:
+    namespace: ollama
+    name: ollama-pvc  
+---
+#persistent volume claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-pvc
+  namespace: ollama
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+```
+Eseguire il comando
 ```bash
 kubectl apply -f ollama_pvc.yaml
 ```
 
-Verifica che il PVC sia **bound**:
-```bash
-kubectl get pvc -n ollama
-```
+Creazione del **Deployment** e del **Service** per Ollama.
 
----
-
-## 1. Deployment di Ollama
-
-Creazione del namespace "ollama" 
-`ollama/ollama_ns.yaml`:
+`ollama/ollama_deploy.yaml`:
 
 ```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: ollama
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 3Gi
+        volumeMounts:
+        - name: models
+          mountPath: /root/.ollama
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: ollama-pvc
+```
+
+`ollama/ollama_service.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: ollama
+spec:
+  type: NodePort
+  selector:
+    app: ollama
+  ports:
+  - port: 11434            
+    nodePort: 31434
+```
 
 
-
-Esegui il deployment di Ollama:
+Eseguire i comandi:
 ```bash
 kubectl apply -f ollama_deploy.yaml
 ```
-*(potrebbe richiedere qualche minuto)*
-
-Verifica che il pod sia stato creato:
-```bash
-kubectl get pods -n ollama
-```
-
-Crea un servizio di tipo **NodePort** che espone Ollama:
 ```bash
 kubectl apply -f ollama_service.yaml
 ```
@@ -72,22 +154,43 @@ kubectl describe svc -n ollama ollama
 
 ## 3. Deployment di Llama3.2:1b
 
-Per ora, Ollama non ha nessun modello.  
-Scarichiamo il modello **llama3.2:1b** (leggero, ~1B parametri) tramite un job:
+Sfruttiamo le API di Ollama per scaricare il modello Llama3.2:1b. Lo facciamo tramite un Job:
+
+`ollama/ollama_load-model-job.yaml`:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: load-model
+  namespace: ollama
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: curl
+        image: curlimages/curl
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            until curl -sf http://ollama:11434; do
+              echo "Waiting for ollama..."; sleep 2;
+            done &&
+            curl -X POST http://ollama:11434/api/pull \
+              -H 'Content-Type: application/json' \
+              -d '{"name": "llama3.2:1b"}'
+```
+Eseguire il comando:
 ```bash
 kubectl apply -f ollama_load-model-job.yaml
 ```
 
-Verifica che il job sia terminato (modello scaricato):
-```bash
-kubectl get pods -n ollama
-```
-
 ---
 
-## 4. Interrogare il modello via cURL
+A questo punto, è già possibile interrogare il modello via cURL, sfruttando le API REST esposte da Ollama.
 
-Puoi interrogare Ollama tramite `ClusterIP` e `ServicePort`:
+La chiamata ad Ollama può essere fatta a IP ClusterIP e porta ServicePort:
 ```bash
 curl http://<ClusterIP>:<ServicePort>/api/generate -d '{
   "model": "llama3.2:1b",
@@ -95,42 +198,139 @@ curl http://<ClusterIP>:<ServicePort>/api/generate -d '{
   "stream": false
 }'
 ```
-
-Oppure tramite `NodeIP` e `NodePort`:
+dove ServicePort ha valore 11434 se il file `ollama/ollama_service.yaml` non viene modificato, e ClusterIP può essere visulizzato mediante 
 ```bash
-curl http://192.168.43.11:31434/api/generate -d '{
-  "model": "llama3.2:1b",
-  "prompt": "explain briefly why the sky is blue.",
-  "stream": false
-}'
+kubectl get kubectl get svc -n ollama
+```
+oppure
+```bash
+kubectl describe svc -n ollama ollama
+```
 
-curl http://192.168.43.10:31434/api/generate -d '{
+In alternativa, contattiamo Ollama a IP NodeIP e porta NodePort, sfruttando il fatto il servizio è di tipo NodePort:
+
+```bash
+curl http://<NodeIP>:<NodePort>/api/generate -d '{
   "model": "llama3.2:1b",
   "prompt": "explain briefly why the sky is blue.",
   "stream": false
 }'
 ```
+
+dove NodeIP nel nostro cluster può assumere valori 192.168.43.10 o 192.168.43.11, e NodePort assume valore 31434 se il file `ollama/ollama_service.yaml` non viene modificato
 
 ---
 
 ## 5. Deployment di Open WebUI
 
-Creiamo i PV/PVC necessari per la memorizzazione di conversazioni e credenziali:
+Creazione di **PV/PVC** necessari per la memorizzazione di conversazioni e credenziali:
+
+`openwebui/openwebui_pvc.yaml`:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: openwebui-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /mnt/data/openwebui
+    type: DirectoryOrCreate
+  claimRef:
+    namespace: ollama
+    name: openwebui-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: openwebui-pvc
+  namespace: ollama
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi                        
+```
+Eseguire il comando:
 ```bash
 kubectl apply -f openwebui_pvc.yaml
 ```
+Creazione di **Deployment** e **Service** (di tipo **LoadBalancer**) per Open WebUI:
 
-Verifica che siano bound:
-```bash
-kubectl get pvc -n ollama
+`openwebui/openwebui_deploy.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: open-webui
+  namespace: ollama
+  labels:
+    app: open-webui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: open-webui
+  template:
+    metadata:
+      labels:
+        app: open-webui
+    spec:
+      containers:
+      - name: open-webui
+        image: ghcr.io/open-webui/open-webui:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OLLAMA_BASE_URL
+          value: "http://ollama:11434"
+        volumeMounts:
+          - name: webui-data
+            mountPath: /app/backend/data
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 128Mi
+          limits: 
+            cpu: 2000m
+            memory: 1Gi
+      volumes:
+      - name: webui-data
+        persistentVolumeClaim:
+          claimName: openwebui-pvc
 ```
 
-Deployment di Open WebUI:
+`openwebui/openwebui_service.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: open-webui
+  namespace: ollama
+spec:
+  type: LoadBalancer
+  selector:
+    app: open-webui
+  ports:
+  - port: 8080
+    nodePort: 31808
+```
+
+Eseguire i comandi:
+
 ```bash
 kubectl apply -f openwebui_deploy.yaml
 ```
-
 Esponi Open WebUI con un servizio di tipo **LoadBalancer**:
+
 ```bash
 kubectl apply -f openwebui_service.yaml
 ```
@@ -143,7 +343,6 @@ kubectl describe svc -n ollama open-webui
 
 ---
 
-## 6. Accesso a Open WebUI
 
 Una volta creato il servizio, accedi a Open WebUI tramite browser all’indirizzo:
 
