@@ -1,15 +1,15 @@
-# Deployment di Llama, Ollama e Open WebUI su Kubernetes
+# Deployment di Llama, Ollama e Open WebUI su cluster Kubernetes
 ## Descrizione del progetto
-Il progetto consiste nel deployment di **Llama3.2:1b**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
+Il progetto consiste nel deployment di **Llama-3.2-1B**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
 1. **Llama-3.2-1B** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con circa 1 miliardo di parametri.
-2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend dell'applicazione. **Ollama** espone delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
+2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend della nostra applicazione. Espone delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
 3. **Open WebUI** è un'interfaccia AI self-hosted. Accessibile anch'essa attraveso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (**Ollama**) attraverso chiamate HTTP.
 
 ---
 
 ## Architettura del cluster
 
-Il cluster Kubernetes è costituito da due macchine virtuali su cui è installato Ubuntu. 
+Il cluster Kubernetes è costituito da due macchine virtuali su cui è installato LUbuntu. 
 Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. 
 
 Per quanto riguarda i nodi Kubernetes, una VM fa da master e l'altra da worker:
@@ -37,12 +37,11 @@ Eseguire il comando
 kubectl apply -f ollama_ns.yaml
 ```
 
-Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati , tra cui i modelli stessi. E' necessario che nel nodo worker sia presente la directory `/mnt/data/ollama`.
+Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati , tra cui i modelli stessi.
 
 `ollama/ollama_pvc.yaml`:
 
 ```yaml
-#persistent volume
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -55,11 +54,11 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   hostPath:
     path: /mnt/data/ollama
+    type: DirectoryOrCreate
   claimRef:
     namespace: ollama
     name: ollama-pvc  
 ---
-#persistent volume claim
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -188,6 +187,13 @@ Eseguire il comando:
 ```bash
 kubectl apply -f ollama_load-model-job.yaml
 ```
+Per testare:
+```bash
+kubectl get pods -n ollama
+```
+```bash
+kubectl get svc -n ollama
+```
 
 A questo punto, è già possibile interrogare il modello via cURL dal terminale di uno dei nodi, sfruttando le API REST esposte da Ollama.
 
@@ -212,18 +218,7 @@ dove il ClusterIP è visualizzabile mediante:
 ```bash
 kubectl get svc -n ollama
 ```
-oppure
-```bash
-kubectl describe svc -n ollama ollama
-```
 
-Per testare:
-```bash
-kubectl get pods -n ollama
-```
-```bash
-kubectl get svc -n ollama
-```
 ---
 
 ## 4. Open WebUI
@@ -362,3 +357,5 @@ kubectl describe svc -n ollama open-webui
 ```
 
 ---
+
+## 5. Test dell'interfaccia Open WebUI
