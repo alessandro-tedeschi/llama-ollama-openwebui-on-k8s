@@ -1,18 +1,18 @@
 # Deployment di Llama, Ollama e Open WebUI su Kubernetes
 ## Descrizione del progetto
 Il progetto consiste nel deployment di **Llama3.2:1b**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
-1. **Llama3.2:1b** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con 1 miliardo di parametri.
-2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend dell'applicazione. Ollama esponde delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
-3. **Open WebUI** è un'interfaccia AI self-hosted. Accessibile anch'essa attraveso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (Ollama) attraverso chiamate HTTP.
+1. **Llama-3.2-1B** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con circa 1 miliardo di parametri.
+2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend dell'applicazione. **Ollama** espone delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
+3. **Open WebUI** è un'interfaccia AI self-hosted. Accessibile anch'essa attraveso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (**Ollama**) attraverso chiamate HTTP.
 
 ---
 
 ## Architettura del cluster
 
-Il cluster Kubernetes è costituito da due macchine virtuali su cui è installato Xubuntu 24. 
+Il cluster Kubernetes è costituito da due macchine virtuali su cui è installato Ubuntu. 
 Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. 
 
-Per quanto riguarda i nodi Kubernetes, una VM ospita il nodo master e l’altra il nodo worker:
+Per quanto riguarda i nodi Kubernetes, una VM fa da master e l'altra da worker:
 * **master** (`192.168.43.10`)
 * **worker** (`192.168.43.11`)
 
@@ -37,7 +37,7 @@ Eseguire il comando
 kubectl apply -f ollama_ns.yaml
 ```
 
-Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati , tra cui i modelli stessi.
+Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati , tra cui i modelli stessi. E' necessario che nel nodo worker sia presente la directory `/mnt/data/ollama`.
 
 `ollama/ollama_pvc.yaml`:
 
@@ -155,9 +155,9 @@ kubectl get svc -n ollama
 
 ---
 
-## 3. Deployment di Llama3.2:1b
+## 3. Deployment di Llama-3.2-1B
 
-Sfruttiamo le API di Ollama per scaricare il modello Llama3.2:1b. Lo facciamo tramite un Job:
+Sfruttiamo le API di Ollama per scaricare il modello Llama-3.2-1B. Lo facciamo tramite un Job:
 
 `ollama/ollama_load-model-job.yaml`:
 
@@ -189,44 +189,46 @@ Eseguire il comando:
 kubectl apply -f ollama_load-model-job.yaml
 ```
 
----
+A questo punto, è già possibile interrogare il modello via cURL dal terminale di uno dei nodi, sfruttando le API REST esposte da Ollama.
 
-A questo punto, è già possibile interrogare il modello via cURL, sfruttando le API REST esposte da Ollama.
-
-La chiamata ad Ollama può essere fatta a IP ClusterIP e porta ServicePort:
+La chiamata può essere fatta a IP e porta del nodo:
 ```bash
-curl http://<ClusterIP>:<ServicePort>/api/generate -d '{
+curl http://<NodeIP>:31434/api/generate -d '{
   "model": "llama3.2:1b",
   "prompt": "explain briefly why the sky is blue.",
   "stream": false
 }'
 ```
-dove ServicePort ha valore 11434 se il file `ollama/ollama_service.yaml` non viene modificato, e ClusterIP può essere visulizzato mediante 
+Nel nostro cluster, gli indirizzi IP dei nodi sono `192.168.43.10` e `192.168.43.11`.
+In alternativa, si può usare ClusterIP e porta del servizio.
 ```bash
-kubectl get kubectl get svc -n ollama
+curl http://<ClusterIP>:11434/api/generate -d '{
+  "model": "llama3.2:1b",
+  "prompt": "explain briefly why the sky is blue.",
+  "stream": false
+}'
+```
+dove il ClusterIP è visualizzabile mediante:
+```bash
+kubectl get svc -n ollama
 ```
 oppure
 ```bash
 kubectl describe svc -n ollama ollama
 ```
 
-In alternativa, contattiamo Ollama a IP NodeIP e porta NodePort, sfruttando il fatto il servizio è di tipo NodePort:
-
+Per testare:
 ```bash
-curl http://<NodeIP>:<NodePort>/api/generate -d '{
-  "model": "llama3.2:1b",
-  "prompt": "explain briefly why the sky is blue.",
-  "stream": false
-}'
+kubectl get pods -n ollama
 ```
-
-dove NodeIP nel nostro cluster può assumere valori 192.168.43.10 o 192.168.43.11, e NodePort assume valore 31434 se il file `ollama/ollama_service.yaml` non viene modificato
-
+```bash
+kubectl get svc -n ollama
+```
 ---
 
 ## 4. Open WebUI
 
-Creazione di **PV** e **PVC** necessari per la persistenza di conversazioni e credenziali:
+Creazione di **PV** e **PVC** necessari per la persistenza di conversazioni e credenziali. Nel nodo worker deve essere presente la directory /mnt/data/openwebui:
 
 `openwebui/openwebui_pvc.yaml`:
 
@@ -264,7 +266,7 @@ Eseguire il comando:
 ```bash
 kubectl apply -f openwebui_pvc.yaml
 ```
-Creazione di **Deployment** e **Service** (di tipo **LoadBalancer**) per Open WebUI:
+Creazione di **Deployment** e **Service** (di tipo **LoadBalancer**) per Open WebUI. Come LoadBalancer è stato utilizzato MetalLB.
 
 `openwebui/openwebui_deploy.yaml`:
 
@@ -288,7 +290,7 @@ spec:
     spec:
       containers:
       - name: open-webui
-        image: ghcr.io/open-webui/open-webui:latest
+        image: ghcr.io/open-webui/open-webui:main
         ports:
         - containerPort: 8080
         env:
@@ -332,33 +334,31 @@ Eseguire i comandi:
 ```bash
 kubectl apply -f openwebui_deploy.yaml
 ```
-Esponi Open WebUI con un servizio di tipo **LoadBalancer**:
 
 ```bash
 kubectl apply -f openwebui_service.yaml
 ```
-
-Verifica le informazioni del servizio:
+Per testare:
+```bash
+kubectl get pods -n ollama
+```
 ```bash
 kubectl get svc -n ollama
-kubectl describe svc -n ollama open-webui
 ```
 
 ---
 
-
-Una volta creato il servizio, accedi a Open WebUI tramite browser all’indirizzo:
-
+Ora è possibile accedere al servizio Open WebUI tramite browser da uno dei due nodi all’URL:
 ```
-http://<ExternalIP>:<ServicePort>
+http://<ExternalIP>:<8080>
 ```
-
-Esempio:
+dove l'indirizzo IP esterno può essere visualizzato attraverso:
+```bash
+kubectl get svc -n ollama
 ```
-http://192.168.1.240:8080
+oppure
+```bash
+kubectl describe svc -n ollama open-webui
 ```
-
-La variabile di ambiente definita in `openwebui_deploy.yaml` permette a Open WebUI di comunicare con Ollama.  
-In questo modo, l’interfaccia web può vedere i modelli scaricati e inviare richieste di inferenza.  
 
 ---
