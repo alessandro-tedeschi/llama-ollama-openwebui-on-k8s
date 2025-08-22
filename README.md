@@ -1,8 +1,22 @@
 # Deployment di Ollama + Open WebUI su Kubernetes
-
-Questa guida descrive i passaggi per effettuare il deployment di **Ollama** e **Open WebUI** su Kubernetes.  
+## Descrizione del progetto
+Il progetto consiste nel deployment di **Llama3.2:1b**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
+1. **Llama3.2:1b** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con 1 miliardo di parametri.
+2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio kubernetes, rappresenta il backend dell'applicazione. Ollama esponde delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
+3. **Open WebUI** è un'interfaccia AI self-hosted. Accessiile anche essa attraveso un servizio kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (Ollama) attraverso chiamate HTTP.
 
 ---
+
+## Architettura del cluster
+
+Il cluster Kubernetes è costituito da due macchine virtuali su cui è installato Xubuntu 24. 
+Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. 
+
+Per quanto riguarda i nodi Kubernetes, una VM ospita il nodo master e l’altra il nodo worker:
+* **master** (`192.168.43.10`)
+* **worker** (`192.168.43.11`)
+
+![Figura 1 – Architettura del cluster Kubernetes](img/cluster-architettura.jpg)
 
 ## 1. Creazione namespace e PVC
 
@@ -23,7 +37,14 @@ kubectl get pvc -n ollama
 
 ---
 
-## 2. Deployment di Ollama
+## 1. Deployment di Ollama
+
+Creazione del namespace "ollama" 
+`ollama/ollama_ns.yaml`:
+
+```yaml
+
+
 
 Esegui il deployment di Ollama:
 ```bash
@@ -49,7 +70,7 @@ kubectl describe svc -n ollama ollama
 
 ---
 
-## 3. Caricare un modello in Ollama
+## 3. Deployment di Llama3.2:1b
 
 Per ora, Ollama non ha nessun modello.  
 Scarichiamo il modello **llama3.2:1b** (leggero, ~1B parametri) tramite un job:
