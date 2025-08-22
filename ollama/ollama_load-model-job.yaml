@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: load-model
+  namespace: ollama
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: curl
+        image: curlimages/curl
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            until curl -sf http://ollama:11434; do
+              echo "Waiting for ollama..."; sleep 2;
+            done &&
+            curl -X POST http://ollama:11434/api/pull \
+              -H 'Content-Type: application/json' \
+              -d '{"name": "llama3.2:1b"}'
