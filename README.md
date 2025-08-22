@@ -3,7 +3,7 @@
 Il progetto consiste nel deployment di **Llama3.2:1b**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
 1. **Llama3.2:1b** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con 1 miliardo di parametri.
 2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio kubernetes, rappresenta il backend dell'applicazione. Ollama esponde delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
-3. **Open WebUI** è un'interfaccia AI self-hosted. Accessiile anche essa attraveso un servizio kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (Ollama) attraverso chiamate HTTP.
+3. **Open WebUI** è un'interfaccia AI self-hosted. Accessibile anche essa attraveso un servizio kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (Ollama) attraverso chiamate HTTP.
 
 ---
 
