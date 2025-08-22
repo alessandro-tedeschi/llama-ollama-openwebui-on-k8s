@@ -1,9 +1,9 @@
-# Deployment di Llama,Ollama e Open WebUI su Kubernetes
+# Deployment di Llama, Ollama e Open WebUI su Kubernetes
 ## Descrizione del progetto
 Il progetto consiste nel deployment di **Llama3.2:1b**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
 1. **Llama3.2:1b** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con 1 miliardo di parametri.
-2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio kubernetes, rappresenta il backend dell'applicazione. Ollama esponde delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
-3. **Open WebUI** è un'interfaccia AI self-hosted. Accessibile anche essa attraveso un servizio kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (Ollama) attraverso chiamate HTTP.
+2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend dell'applicazione. Ollama esponde delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
+3. **Open WebUI** è un'interfaccia AI self-hosted. Accessibile anch'essa attraveso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (Ollama) attraverso chiamate HTTP.
 
 ---
 
@@ -18,7 +18,9 @@ Per quanto riguarda i nodi Kubernetes, una VM ospita il nodo master e l’altra 
 
 ![Figura 1 – Architettura del cluster Kubernetes](img/cluster-architettura.jpg)
 
-## 1. Deployment di Ollama
+---
+
+## 1. Deployment di Ollama (backend)
 
 Creazione del **Namespace** in cui definiremo tutte le risorse relative a questo progetto:
 
@@ -135,7 +137,6 @@ spec:
     nodePort: 31434
 ```
 
-
 Eseguire i comandi:
 ```bash
 kubectl apply -f ollama_deploy.yaml
@@ -144,10 +145,12 @@ kubectl apply -f ollama_deploy.yaml
 kubectl apply -f ollama_service.yaml
 ```
 
-Verifica la presenza del servizio:
+Per testare:
+```bash
+kubectl get pods -n ollama
+```
 ```bash
 kubectl get svc -n ollama
-kubectl describe svc -n ollama ollama
 ```
 
 ---
@@ -221,9 +224,9 @@ dove NodeIP nel nostro cluster può assumere valori 192.168.43.10 o 192.168.43.1
 
 ---
 
-## 5. Deployment di Open WebUI
+## 4. Open WebUI
 
-Creazione di **PV/PVC** necessari per la memorizzazione di conversazioni e credenziali:
+Creazione di **PV** e **PVC** necessari per la persistenza di conversazioni e credenziali:
 
 `openwebui/openwebui_pvc.yaml`:
 
