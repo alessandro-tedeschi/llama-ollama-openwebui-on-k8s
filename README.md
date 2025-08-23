@@ -364,7 +364,7 @@ A questo punto, è possibile chattare con l'llm. L'interfaccia consente anche di
 
 Successivamente si può accedere con le credenziali precedentemente create:
 
-![Figura 5 – Accesso account Open WebUI](img/create_account_openwebui.jpeg)
+![Figura 5 – Accesso account Open WebUI](img/openwebui_sign_in.jpeg)
 
 Open WebUI consente inoltre di creare e rinominare le chat, memorizzandole.
 
