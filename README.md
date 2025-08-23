@@ -10,7 +10,7 @@ Il progetto consiste nel deployment di [**llama3.2:1b**](https://ollama.com/libr
 ## Architettura del cluster
 
 Il cluster è costituito da due macchine virtuali Lubuntu 25.04, sulle quali è installato Kubernetes v1.32.0. 
-Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. Una delle due macchine rappresenta il master, l'altra il worker del cluster Kubernetes:
+Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. Una delle due macchine ospita il nodo master, l'altra il nodo worker del cluster Kubernetes:
 * **master** (`192.168.43.10`)
 * **worker** (`192.168.43.11`)
 
@@ -353,6 +353,9 @@ kubectl get svc -n ollama
 
 ## 5. Test dell'applicazione.
 
+Per poter utilizzare Open WebUI, è necessario creare un account amministratore:
+
+![Figura 1 – Creazione account Open WebUI](img/cluster_architecture.png)
 
 
 
