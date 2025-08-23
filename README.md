@@ -14,7 +14,7 @@ Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox
 * **master** (`192.168.43.10`)
 * **worker** (`192.168.43.11`)
 
-![Figura 1 – Architettura del cluster Kubernetes](img/cluster-architettura.jpg)
+![Figura 1 – Architettura del cluster Kubernetes](img/cluster_architecture.png)
 
 ---
 
