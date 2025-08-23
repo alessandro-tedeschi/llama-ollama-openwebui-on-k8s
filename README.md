@@ -32,7 +32,7 @@ metadata:
 ```
 Eseguire il comando
 ```bash
-kubectl apply -f ollama_ns.yaml
+kubectl apply -f ollama/ollama_ns.yaml
 ```
 
 Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati , tra cui i modelli stessi.
@@ -71,7 +71,7 @@ spec:
 ```
 Eseguire il comando
 ```bash
-kubectl apply -f ollama_pvc.yaml
+kubectl apply -f ollama/ollama_pvc.yaml
 ```
 
 Creazione del **Deployment** e del **Service** per Ollama.
@@ -136,10 +136,10 @@ spec:
 
 Eseguire i comandi:
 ```bash
-kubectl apply -f ollama_deploy.yaml
+kubectl apply -f ollama/ollama_deploy.yaml
 ```
 ```bash
-kubectl apply -f ollama_service.yaml
+kubectl apply -f ollama/ollama_service.yaml
 ```
 
 Per testare:
@@ -183,7 +183,7 @@ spec:
 ```
 Eseguire il comando:
 ```bash
-kubectl apply -f ollama_load-model-job.yaml
+kubectl apply -f ollama/ollama_load-model-job.yaml
 ```
 Per testare:
 ```bash
@@ -257,7 +257,7 @@ spec:
 ```
 Eseguire il comando:
 ```bash
-kubectl apply -f openwebui_pvc.yaml
+kubectl apply -f openwebui/openwebui_pvc.yaml
 ```
 Creazione di **Deployment** e **Service** di tipo LoadBalancer per Open WebUI. Come LoadBalancer è stato utilizzato [MetalLB](https://metallb.io/).
 
@@ -325,11 +325,11 @@ spec:
 Eseguire i comandi:
 
 ```bash
-kubectl apply -f openwebui_deploy.yaml
+kubectl apply -f openwebui/openwebui_deploy.yaml
 ```
 
 ```bash
-kubectl apply -f openwebui_service.yaml
+kubectl apply -f openwebui/openwebui_service.yaml
 ```
 Per testare:
 ```bash
@@ -338,7 +338,6 @@ kubectl get pods -n ollama
 ```bash
 kubectl get svc -n ollama
 ```
-
 ---
 
 Ora è possibile accedere al servizio Open WebUI tramite browser da uno dei due nodi all’URL:
@@ -367,9 +366,8 @@ Successivamente si può accedere con le credenziali precedentemente create:
 
 ![Figura 5 – Accesso account Open WebUI](img/create_account_openwebui.jpeg)
 
-Open WebUI consente di creare e rinominare le chat, e le memorizza.
+Open WebUI consente inoltre di creare e rinominare le chat, memorizzandole.
 
-![Figura 6 – Creazione account Open WebUI](img/create_account_openwebui.jpeg)
 
 
 
