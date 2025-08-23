@@ -197,7 +197,7 @@ kubectl get svc -n ollama
 
 A questo punto, è già possibile interrogare il modello via cURL dal terminale di uno dei nodi, sfruttando le API esposte da Ollama.
 
-La chiamata può essere fatta a IP e porta del nodo (relativa al servizio `ollama`, ovvero il valore `spec.ports.nodePort` in `ollama/ollama_service.yaml`):
+La chiamata può essere fatta a IP e porta del nodo (porta relativa al servizio `ollama`, ovvero il valore `spec.ports.nodePort` in `ollama/ollama_service.yaml`):
 ```bash
 curl http://<NodeIP>:31434/api/generate -d '{
   "model": "llama3.2:1b",
