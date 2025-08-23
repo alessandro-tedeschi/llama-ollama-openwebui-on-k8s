@@ -354,11 +354,11 @@ e 8080 è la porta definita in `spec.ports.port` in `openwebui/openwebui_service
 
 ## 5. Test dell'applicazione
 
-Per poter utilizzare Open WebUI, è necessario creare un account amministratore:
+Una volta acceduto via browser al suddetto URL, per poter utilizzare Open WebUI è necessario creare un account amministratore:
 
 ![Figura 2 – Creazione account Open WebUI](img/create_account_openwebui.jpeg)
 
-A questo punto, è possibile chattare con l'llm. L'interfaccia consente anche di selezionare il modello.
+A questo punto, è possibile chattare con l'LLM. L'interfaccia consente anche di selezionare il modello.
 
 ![Figura 3 – Nuova conversazione Open WebUI](img/openwebui_new_chat.jpeg)
 
@@ -368,8 +368,4 @@ Successivamente si può accedere con le credenziali precedentemente create:
 
 ![Figura 5 – Accesso account Open WebUI](img/openwebui_sign_in.jpeg)
 
-Open WebUI consente inoltre di gestire (ad esempio creare, rinominare, eliminare) e memorizzare le chat.
-
-
-
-
+avendo così la possibilità di creare una nuova chat o di accedere allo storico delle chat, che possono essere proseguite, rinominate o eliminate.
