@@ -1,18 +1,16 @@
 # Deployment di Llama, Ollama e Open WebUI su cluster Kubernetes
 ## Descrizione del progetto
-Il progetto consiste nel deployment di **Llama-3.2-1B**, **Ollama** e **Open WebUI** su un cluster Kubernetes.  
-1. **Llama-3.2-1B** è un Large Language Model rilasciato da Meta con licenza Source-available. Si tratta di un modello leggero, con circa 1 miliardo di parametri.
+Il progetto consiste nel deployment di [**llama3.2:1b**](https://ollama.com/library/llama3.2:1b), [**Ollama**](https://ollama.com/) e [**Open WebUI**](https://openwebui.com/) su un cluster Kubernetes.  
+1. **llama3.2:1b** è un Large Language Model rilasciato da Meta. Si tratta di un modello leggero, con circa 1 miliardo di parametri.
 2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend della nostra applicazione. Espone delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
-3. **Open WebUI** è un'interfaccia AI self-hosted. Accessibile anch'essa attraveso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (**Ollama**) attraverso chiamate HTTP.
+3. **Open WebUI** è un'interfaccia web per interagire con large language model. Accessibile anch'essa attraveso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend (Ollama) attraverso chiamate HTTP.
 
 ---
 
 ## Architettura del cluster
 
-Il cluster Kubernetes è costituito da due macchine virtuali su cui è installato LUbuntu. 
-Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. 
-
-Per quanto riguarda i nodi Kubernetes, una VM fa da master e l'altra da worker:
+Il cluster è costituito da due macchine virtuali Lubuntu 25.04, sulle quali è installato Kubernetes v1.32.0. 
+Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. Una delle due macchine rappresenta il master, l'altra il worker del cluster Kubernetes:
 * **master** (`192.168.43.10`)
 * **worker** (`192.168.43.11`)
 
@@ -154,9 +152,9 @@ kubectl get svc -n ollama
 
 ---
 
-## 3. Deployment di Llama-3.2-1B
+## 3. Deployment di llama3.2:1b
 
-Sfruttiamo le API di Ollama per scaricare il modello Llama-3.2-1B. Lo facciamo tramite un Job:
+Sfruttiamo le API di Ollama per scaricare il modello llama3.2:1b. Lo facciamo tramite un Job:
 
 `ollama/ollama_load-model-job.yaml`:
 
@@ -197,7 +195,7 @@ kubectl get svc -n ollama
 
 A questo punto, è già possibile interrogare il modello via cURL dal terminale di uno dei nodi, sfruttando le API REST esposte da Ollama.
 
-La chiamata può essere fatta a IP e porta del nodo:
+La chiamata può essere fatta a IP e porta del nodo (relativi al servizio `ollama`):
 ```bash
 curl http://<NodeIP>:31434/api/generate -d '{
   "model": "llama3.2:1b",
@@ -261,7 +259,7 @@ Eseguire il comando:
 ```bash
 kubectl apply -f openwebui_pvc.yaml
 ```
-Creazione di **Deployment** e **Service** di tipo LoadBalancer per Open WebUI. Come LoadBalancer è stato utilizzato MetalLB.
+Creazione di **Deployment** e **Service** di tipo LoadBalancer per Open WebUI. Come LoadBalancer è stato utilizzato [MetalLB](https://metallb.io/).
 
 `openwebui/openwebui_deploy.yaml`:
 
@@ -347,7 +345,7 @@ Ora è possibile accedere al servizio Open WebUI tramite browser da uno dei due 
 ```
 http://<ExternalIP>:<8080>
 ```
-dove ExternalIP è l'indirizzo IP esterno del LoadBalancer, visualizzabile attraverso attraverso:
+dove ExternalIP è l'indirizzo IP esterno del LoadBalancer, visualizzabile attraverso:
 ```bash
 kubectl get svc -n ollama
 ```
