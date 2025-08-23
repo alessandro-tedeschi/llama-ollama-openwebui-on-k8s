@@ -355,7 +355,22 @@ kubectl get svc -n ollama
 
 Per poter utilizzare Open WebUI, è necessario creare un account amministratore:
 
-![Figura 1 – Creazione account Open WebUI](img/cluster_architecture.png)
+![Figura 2 – Creazione account Open WebUI](img/create_account_openwebui.jpeg)
+
+A questo punto, è possibile chattare con l'llm. L'interfaccia consente anche di selezionare il modello.
+
+![Figura 3 – Nuova conversazione Open WebUI](img/openwebui_new_chat.jpeg)
+
+![Figura 4 – Esempio di risposta del modello](img/openwebui_first_response.jpeg)
+
+Successivamente si può accedere con le credenziali precedentemente create:
+
+![Figura 5 – Accesso account Open WebUI](img/create_account_openwebui.jpeg)
+
+Open WebUI consente di creare e rinominare le chat, e le memorizza.
+
+![Figura 6 – Creazione account Open WebUI](img/create_account_openwebui.jpeg)
+
 
 
 
