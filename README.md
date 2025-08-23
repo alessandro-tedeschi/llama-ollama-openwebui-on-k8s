@@ -1,26 +1,30 @@
 # Deployment di Llama, Ollama e Open WebUI su cluster Kubernetes
 ## Descrizione del progetto
 Il progetto consiste nel deployment di [**llama3.2:1b**](https://ollama.com/library/llama3.2:1b), [**Ollama**](https://ollama.com/) e [**Open WebUI**](https://openwebui.com/) su un cluster Kubernetes.  
-1. **llama3.2:1b** è un Large Language Model rilasciato da Meta. Si tratta di un modello leggero, con circa 1 miliardo di parametri.
-2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend della nostra applicazione. Espone delle API REST attraverso cui è possibile scaricare modelli e interrogarli.
-3. **Open WebUI** è un'interfaccia web self-hosted, estensibile, intuitiva e offline per interagire con large language model. Accessibile anch'essa attraveso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend Ollama attraverso chiamate HTTP alle sue API.
+1. **llama3.2:1b** è un large language model rilasciato da Meta. Si tratta di un modello leggero, con circa 1 miliardo di parametri.
+2. **Ollama** è un framework per l'esecuzione di large language model. Reso accessibile attraverso un servizio Kubernetes, rappresenta il backend della nostra applicazione. Espone delle API attraverso cui è possibile scaricare modelli e interrogarli.
+3. **Open WebUI** è un'interfaccia web per interagire con large language model. Accessibile anch'essa attraverso un servizio Kubernetes, rappresenta il frontend dell'applicazione, interagendo con il backend Ollama mediante chiamate HTTP alle sue API.
 
----
 
 ## Architettura del cluster
 
-Il cluster è costituito da due macchine virtuali Lubuntu 25.04, sulle quali è installato Kubernetes v1.32.0. 
+Il cluster Kubernetes è costituito da due macchine virtuali Lubuntu 25.04, sulle quali è installato Kubernetes v1.32.0. 
 Le due macchine virtuali sono connesse ad una rete con NAT gestita da VirtualBox. Una delle due macchine ospita il nodo master, l'altra il nodo worker del cluster Kubernetes:
 * **master** (`192.168.43.10`)
 * **worker** (`192.168.43.11`)
 
 ![Figura 1 – Architettura del cluster Kubernetes](img/cluster_architecture.png)
 
----
+## 0. Clone della repository
+
+```bash
+git clone https://github.com/alessandro-tedeschi/llama-ollama-openwebui-on-k8s.git
+cd llama-ollama-openwebui-on-k8s
+```
 
 ## 1. Deployment di Ollama (backend)
 
-Creazione del **Namespace** in cui definiremo tutte le risorse relative a questo progetto:
+Creazione del **Namespace** in cui verranno definite tutte le risorse relative a questo progetto:
 
 `ollama/ollama_ns.yaml`:
 
@@ -35,7 +39,7 @@ Eseguire il comando
 kubectl apply -f ollama/ollama_ns.yaml
 ```
 
-Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati , tra cui i modelli stessi.
+Creazione di **PersistentVolume** e **PersistentVolumeClaim** per la persistenza dei dati di Ollama, tra cui i modelli stessi.
 
 `ollama/ollama_pvc.yaml`:
 
@@ -142,7 +146,7 @@ kubectl apply -f ollama/ollama_deploy.yaml
 kubectl apply -f ollama/ollama_service.yaml
 ```
 
-Per testare:
+Per verificare:
 ```bash
 kubectl get pods -n ollama
 ```
@@ -150,11 +154,9 @@ kubectl get pods -n ollama
 kubectl get svc -n ollama
 ```
 
----
-
 ## 3. Deployment di llama3.2:1b
 
-Sfruttiamo le API di Ollama per scaricare il modello llama3.2:1b. Lo facciamo tramite un Job:
+Sfruttiamo le API di Ollama per scaricare il modello llama3.2:1b. Lo facciamo tramite un **Job**:
 
 `ollama/ollama_load-model-job.yaml`:
 
@@ -185,7 +187,7 @@ Eseguire il comando:
 ```bash
 kubectl apply -f ollama/ollama_load-model-job.yaml
 ```
-Per testare:
+Per verificare:
 ```bash
 kubectl get pods -n ollama
 ```
@@ -193,9 +195,9 @@ kubectl get pods -n ollama
 kubectl get svc -n ollama
 ```
 
-A questo punto, è già possibile interrogare il modello via cURL dal terminale di uno dei nodi, sfruttando le API REST esposte da Ollama.
+A questo punto, è già possibile interrogare il modello via cURL dal terminale di uno dei nodi, sfruttando le API esposte da Ollama.
 
-La chiamata può essere fatta a IP e porta del nodo (relativi al servizio `ollama`):
+La chiamata può essere fatta a IP e porta del nodo (relativa al servizio `ollama`, ovvero il valore `spec.ports.nodePort` in `ollama/ollama_service.yaml`):
 ```bash
 curl http://<NodeIP>:31434/api/generate -d '{
   "model": "llama3.2:1b",
@@ -204,7 +206,7 @@ curl http://<NodeIP>:31434/api/generate -d '{
 }'
 ```
 Nel nostro cluster, gli indirizzi IP dei nodi sono `192.168.43.10` e `192.168.43.11`.
-In alternativa, si può usare ClusterIP e porta del servizio.
+In alternativa, si può usare ClusterIP e porta del servizio (`spec.ports.port` in `ollama/ollama_service.yaml`)
 ```bash
 curl http://<ClusterIP>:11434/api/generate -d '{
   "model": "llama3.2:1b",
@@ -212,7 +214,7 @@ curl http://<ClusterIP>:11434/api/generate -d '{
   "stream": false
 }'
 ```
-dove il ClusterIP è visualizzabile mediante:
+dove il ClusterIP del servizio `ollama` è visualizzabile mediante:
 ```bash
 kubectl get svc -n ollama
 ```
@@ -340,7 +342,7 @@ kubectl get svc -n ollama
 ```
 ---
 
-Ora è possibile accedere al servizio Open WebUI tramite browser da uno dei due nodi all’URL:
+Ora è possibile accedere al servizio Open WebUI tramite browser da una delle due VM all’URL:
 ```
 http://<ExternalIP>:<8080>
 ```
@@ -348,9 +350,9 @@ dove ExternalIP è l'indirizzo IP esterno del LoadBalancer, visualizzabile attra
 ```bash
 kubectl get svc -n ollama
 ```
----
+e 8080 è la porta definita in `spec.ports.port` in `openwebui/openwebui_service.yaml`
 
-## 5. Test dell'applicazione.
+## 5. Test dell'applicazione
 
 Per poter utilizzare Open WebUI, è necessario creare un account amministratore:
 
@@ -366,8 +368,7 @@ Successivamente si può accedere con le credenziali precedentemente create:
 
 ![Figura 5 – Accesso account Open WebUI](img/openwebui_sign_in.jpeg)
 
-Open WebUI consente inoltre di creare e rinominare le chat, memorizzandole.
-
+Open WebUI consente inoltre di gestire (ad esempio creare, rinominare, eliminare) e memorizzare le chat.
 
 
 
