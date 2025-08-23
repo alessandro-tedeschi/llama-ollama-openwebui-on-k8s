@@ -24,7 +24,7 @@ cd llama-ollama-openwebui-on-k8s
 
 ## 1. Deployment di Ollama (backend)
 
-Creazione del **Namespace** in cui verranno definite tutte le risorse relative a questo progetto:
+Creazione del **Namespace** in cui verranno definite tutte le risorse relative a questo progetto.
 
 `ollama/ollama_ns.yaml`:
 
@@ -73,7 +73,7 @@ spec:
     requests:
       storage: 10Gi
 ```
-Eseguire il comando
+Eseguire il comando:
 ```bash
 kubectl apply -f ollama/ollama_pvc.yaml
 ```
@@ -156,7 +156,7 @@ kubectl get svc -n ollama
 
 ## 3. Deployment di llama3.2:1b
 
-Sfruttiamo le API di Ollama per scaricare il modello llama3.2:1b. Lo facciamo tramite un **Job**:
+Sfruttiamo le API di Ollama per scaricare il modello llama3.2:1b. Lo facciamo tramite un **Job**.
 
 `ollama/ollama_load-model-job.yaml`:
 
@@ -223,7 +223,7 @@ Esempio di risposta alla cURL precedente:
 
 ## 4. Open WebUI
 
-Creazione di **PersistentVolume** e **PersistentVolumeClaim** necessari per la persistenza di conversazioni e credenziali:
+Creazione di **PersistentVolume** e **PersistentVolumeClaim** necessari per la persistenza di conversazioni e credenziali.
 
 `openwebui/openwebui_pvc.yaml`:
 
@@ -340,7 +340,6 @@ kubectl get pods -n ollama
 ```bash
 kubectl get svc -n ollama
 ```
----
 
 Ora è possibile accedere al servizio Open WebUI tramite browser da una delle due VM all’URL:
 ```
