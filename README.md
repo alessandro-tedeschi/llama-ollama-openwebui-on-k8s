@@ -343,7 +343,7 @@ kubectl get svc -n ollama
 
 Ora è possibile accedere al servizio Open WebUI tramite browser da una delle due VM all’URL:
 ```
-http://<ExternalIP>:<8080>
+http://<ExternalIP>:8080
 ```
 dove ExternalIP è l'indirizzo IP esterno del LoadBalancer, visualizzabile attraverso:
 ```bash
